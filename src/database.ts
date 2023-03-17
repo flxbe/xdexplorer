@@ -10,6 +10,7 @@ export interface SearchResult {
   fields: Datenfeld[];
   groups: Datenfeldgruppe[];
   rules: Regel[];
+  authors: [string, ElementRefs][];
 }
 
 interface Data {
@@ -19,6 +20,13 @@ interface Data {
   rules: Record<string, Regel>;
 }
 
+export interface ElementRefs {
+  schemaRefs: string[];
+  fieldRefs: string[];
+  groupRefs: string[];
+  ruleRefs: string[];
+}
+
 interface Searchable {
   id: string;
   name: string;
@@ -26,9 +34,11 @@ interface Searchable {
 
 export class Database {
   private data: Data;
+  private authorRefs: Record<string, ElementRefs>;
 
   constructor(data: Data) {
     this.data = data;
+    this.authorRefs = collectAuthorRefs(data);
   }
 
   public static async fromFile(file: File): Promise<Database> {
@@ -48,7 +58,14 @@ export class Database {
       fields: searchRecord(this.data.fields, term),
       groups: searchRecord(this.data.groups, term),
       rules: searchRecord(this.data.rules, term),
+      authors: this.searchAuthors(term),
     };
+  }
+
+  private searchAuthors(term: string): [string, ElementRefs][] {
+    return Object.entries(this.authorRefs).filter(([author, _refs]) =>
+      author.includes(term)
+    );
   }
 
   public getField(identifier: string): Datenfeld | undefined {
@@ -94,4 +111,62 @@ async function loadFile(file: File): Promise<string> {
 
     reader.readAsText(file, "utf-8");
   });
+}
+
+function collectAuthorRefs(data: Data): Record<string, ElementRefs> {
+  const authorRefs: Record<string, ElementRefs> = {};
+
+  Object.values(data.schemas).forEach((schema) => {
+    const { fachlicherErsteller } = schema;
+    if (fachlicherErsteller) {
+      const refs = getRefForAuthor(authorRefs, fachlicherErsteller);
+      refs.schemaRefs.push(schema.id);
+    }
+  });
+
+  Object.values(data.fields).forEach((field) => {
+    const { fachlicherErsteller } = field;
+    if (fachlicherErsteller) {
+      const refs = getRefForAuthor(authorRefs, fachlicherErsteller);
+      refs.fieldRefs.push(field.id);
+    }
+  });
+
+  Object.values(data.groups).forEach((group) => {
+    const { fachlicherErsteller } = group;
+    if (fachlicherErsteller) {
+      const refs = getRefForAuthor(authorRefs, fachlicherErsteller);
+      refs.groupRefs.push(group.id);
+    }
+  });
+
+  Object.values(data.rules).forEach((rule) => {
+    const { fachlicherErsteller } = rule;
+    if (fachlicherErsteller) {
+      const refs = getRefForAuthor(authorRefs, fachlicherErsteller);
+      refs.ruleRefs.push(rule.id);
+    }
+  });
+
+  return authorRefs;
+}
+
+function getRefForAuthor(
+  refs: Record<string, ElementRefs>,
+  author: string
+): ElementRefs {
+  let elementRefs = refs[author];
+
+  if (!elementRefs) {
+    elementRefs = {
+      schemaRefs: [],
+      fieldRefs: [],
+      groupRefs: [],
+      ruleRefs: [],
+    };
+
+    refs[author] = elementRefs;
+  }
+
+  return elementRefs;
 }

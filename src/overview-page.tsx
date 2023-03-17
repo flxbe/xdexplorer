@@ -6,14 +6,14 @@ import {
   Stammdatenschema,
 } from "xdatenfelder-xml/dist/v2";
 import { DataFieldType } from "./data-field-type";
-import { Database, SearchResult } from "./database";
+import { Database, SearchResult, ElementRefs } from "./database";
 import { Link, useSearchParams } from "react-router-dom";
 
 type OverviewPageProps = {
   database: Database;
 };
 
-type Tab = "schema" | "field" | "group" | "rule";
+type Tab = "schema" | "field" | "group" | "rule" | "author";
 
 export function OverviewPage({ database }: OverviewPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -40,16 +40,14 @@ export function OverviewPage({ database }: OverviewPageProps) {
   return (
     <div className="container">
       <div className="row justify-content-center">
-        <div className="col-8">
-          <div className="mb-3 text-center">
-            <label htmlFor="searchForm" className="form-label">
-              <h1>XDatenfelder Explorer</h1>
-            </label>
+        <div className="col-12 col-xxl-8">
+          <div className="mb-3 text-center py-5">
             <input
               type="text"
               className="form-control form-control-lg"
               id="searchForm"
               value={term}
+              placeholder="Suche nach ID, Name"
               onChange={(event) => setTerm(event.target.value)}
             />
           </div>
@@ -101,6 +99,9 @@ function SearchResultList({
     case "schema":
       content = <SchemaList schemas={searchResult.schemas} />;
       break;
+    case "author":
+      content = <AuthorList authors={searchResult.authors} />;
+      break;
     default:
       throw new Error(`Unkonwn tab: ${tab}`);
   }
@@ -146,6 +147,16 @@ function SearchResultList({
             onClick={onNavigate}
           >
             Regeln
+          </TabLink>
+        </li>
+        <li className="nav-item">
+          <TabLink
+            name="author"
+            current={tab}
+            totalResults={searchResult.authors.length}
+            onClick={onNavigate}
+          >
+            Ersteller
           </TabLink>
         </li>
       </ul>
@@ -301,6 +312,36 @@ function SchemaList({ schemas }: { schemas: Stammdatenschema[] }) {
             <small>
               <span className="text-muted">Erstellt von</span>{" "}
               {schema.fachlicherErsteller ?? "Unbekannt"}
+            </small>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AuthorList({ authors }: { authors: [string, ElementRefs][] }) {
+  const wrappedAuthors = authors.slice(0, 20);
+
+  return (
+    <div className="list-group">
+      {wrappedAuthors.map(([author, refs]) => (
+        <div className="list-group-item list-group-item-action" key={author}>
+          <div>
+            <h6 className="mb-0">{author}</h6>
+            <small>
+              <span className="badge rounded-pill text-bg-secondary">
+                Stammdatenschemata: {refs.schemaRefs.length}
+              </span>{" "}
+              <span className="badge rounded-pill text-bg-secondary">
+                Datenfeldgruppen: {refs.groupRefs.length}
+              </span>{" "}
+              <span className="badge rounded-pill text-bg-secondary">
+                Datenfelder: {refs.fieldRefs.length}
+              </span>{" "}
+              <span className="badge rounded-pill text-bg-secondary">
+                Regeln: {refs.ruleRefs.length}
+              </span>
             </small>
           </div>
         </div>
