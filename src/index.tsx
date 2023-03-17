@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createRoot } from "react-dom/client";
-import { Routes, Route, HashRouter, Link, useMatch } from "react-router-dom";
+import { Routes, Route, HashRouter, Link } from "react-router-dom";
 import { Database } from "./database";
 import { NotFoundPage } from "./not-found-page";
 import { OverviewPage } from "./overview-page";
@@ -22,7 +22,9 @@ function Application() {
     <div>
       <nav className="navbar bg-dark" data-bs-theme="dark">
         <div className="container-fluid">
-          <span className="navbar-brand mb-0 h1">xDatenfelder Explorer</span>
+          <Link to="/" className="navbar-brand mb-0 h1">
+            xDatenfelder Explorer
+          </Link>
         </div>
       </nav>
       {renderContent()}
