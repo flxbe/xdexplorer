@@ -20,6 +20,7 @@ interface Data {
 }
 
 interface Searchable {
+  id: string;
   name: string;
 }
 
@@ -63,7 +64,10 @@ function searchRecord<T extends Searchable>(
   record: Record<string, T>,
   term: string
 ): T[] {
-  return Object.values(record).filter((item) => item.name.includes(term));
+  // TODO: Make case independent
+  return Object.values(record).filter(
+    (item) => item.id.includes(term) || item.name.includes(term)
+  );
 }
 
 async function loadFile(file: File): Promise<string> {

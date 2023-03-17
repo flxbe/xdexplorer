@@ -7,16 +7,35 @@ import {
 } from "xdatenfelder-xml/dist/v2";
 import { DataFieldType } from "./data-field-type";
 import { Database, SearchResult } from "./database";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 type OverviewPageProps = {
   database: Database;
 };
 
-export function OverviewPage({ database }: OverviewPageProps) {
-  const [term, setTerm] = React.useState<string>("");
+type Tab = "schema" | "field" | "group" | "rule";
 
-  const searchResult = database.search(term);
+export function OverviewPage({ database }: OverviewPageProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const term = searchParams.get("term") ?? "";
+  const tab = searchParams.get("tab") ?? "schema";
+
+  function setTerm(term: string) {
+    setSearchParams({
+      term,
+      tab,
+    });
+  }
+
+  function setTab(tab: Tab) {
+    setSearchParams({
+      term,
+      tab,
+    });
+  }
+
+  const searchResult = React.useMemo(() => database.search(term), [term]);
 
   return (
     <div className="container">
@@ -35,29 +54,35 @@ export function OverviewPage({ database }: OverviewPageProps) {
             />
           </div>
 
-          <SearchResultList searchResult={searchResult} />
+          <SearchResultList
+            tab={tab}
+            onNavigate={setTab}
+            searchResult={searchResult}
+          />
         </div>
       </div>
     </div>
   );
 }
 
-type Tab = "schema" | "field" | "group" | "rule";
+type SearchResultListProps = {
+  tab: string;
+  onNavigate: (tab: Tab) => void;
+  searchResult: SearchResult | undefined;
+};
 
 function SearchResultList({
   searchResult,
-}: {
-  searchResult: SearchResult | undefined;
-}) {
-  const [tab, setTab] = React.useState<Tab>("schema");
-
+  tab,
+  onNavigate,
+}: SearchResultListProps) {
   if (!searchResult) {
     return <div>Keine Ergebnisse...</div>;
   }
 
   function navigate(target: Tab): React.MouseEventHandler<HTMLAnchorElement> {
     return (event: React.MouseEvent<HTMLAnchorElement>) => {
-      setTab(target);
+      onNavigate(target);
       event.preventDefault();
     };
   }
@@ -76,46 +101,85 @@ function SearchResultList({
     case "schema":
       content = <SchemaList schemas={searchResult.schemas} />;
       break;
+    default:
+      throw new Error(`Unkonwn tab: ${tab}`);
   }
 
   return (
     <div>
       <ul className="nav justify-content-center mb-3">
         <li className="nav-item">
-          <a href="#" className="nav-link" onClick={navigate("schema")}>
-            Stammdatenschemata{" "}
-            <span className="badge text-bg-secondary">
-              {searchResult.schemas.length}
-            </span>
-          </a>
+          <TabLink
+            name="schema"
+            current={tab}
+            totalResults={searchResult.schemas.length}
+            onClick={onNavigate}
+          >
+            Stammdatenschemata
+          </TabLink>
         </li>
         <li className="nav-item">
-          <a href="#" className="nav-link" onClick={navigate("field")}>
-            Datenfelder{" "}
-            <span className="badge text-bg-secondary">
-              {searchResult.fields.length}
-            </span>
-          </a>
+          <TabLink
+            name="field"
+            current={tab}
+            totalResults={searchResult.fields.length}
+            onClick={onNavigate}
+          >
+            Datenfelder
+          </TabLink>
         </li>
         <li className="nav-item">
-          <a href="#" className="nav-link" onClick={navigate("group")}>
-            Datenfeldgruppen{" "}
-            <span className="badge text-bg-secondary">
-              {searchResult.groups.length}
-            </span>
-          </a>
+          <TabLink
+            name="group"
+            current={tab}
+            totalResults={searchResult.groups.length}
+            onClick={onNavigate}
+          >
+            Datenfeldgruppen
+          </TabLink>
         </li>
         <li className="nav-item">
-          <a href="#" className="nav-link" onClick={navigate("rule")}>
-            Regeln{" "}
-            <span className="badge text-bg-secondary">
-              {searchResult.rules.length}
-            </span>
-          </a>
+          <TabLink
+            name="rule"
+            current={tab}
+            totalResults={searchResult.rules.length}
+            onClick={onNavigate}
+          >
+            Regeln
+          </TabLink>
         </li>
       </ul>
       {content}
     </div>
+  );
+}
+
+function TabLink({
+  name,
+  children,
+  current,
+  totalResults,
+  onClick,
+}: {
+  name: Tab;
+  children: string;
+  current: string;
+  totalResults: number;
+  onClick: (target: Tab) => void;
+}) {
+  const className = name === current ? "nav-link active" : "nav-link";
+
+  return (
+    <a
+      href="#"
+      className={className}
+      onClick={(event) => {
+        event.preventDefault();
+        onClick(name);
+      }}
+    >
+      {children} <span className="badge text-bg-secondary">{totalResults}</span>
+    </a>
   );
 }
 
