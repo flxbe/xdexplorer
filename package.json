@@ -1,0 +1,28 @@
+{
+  "name": "xdexplorer",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "webpack --config webpack.prod.cjs",
+    "start": "webpack serve --config webpack.dev.cjs"
+  },
+  "author": "Felix Bernhardt",
+  "license": "EUPL-1.2",
+  "devDependencies": {
+    "@tsconfig/recommended": "^1.0.2",
+    "@types/react": "^18.0.28",
+    "@types/react-dom": "^18.0.11",
+    "ts-loader": "^9.4.2",
+    "webpack": "^5.76.2",
+    "webpack-cli": "^5.0.1",
+    "webpack-dev-server": "^4.12.0"
+  },
+  "dependencies": {
+    "bootstrap": "^5.2.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.9.0",
+    "xdatenfelder-xml": "^0.1.4"
+  }
+}
