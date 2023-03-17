@@ -133,7 +133,7 @@ type ViewerProps = {
 
 function Explorer({ database }: ViewerProps) {
   return (
-    <div className="container pb-5">
+    <div className="container py-5">
       <Routes>
         <Route path="/" element={<OverviewPage database={database} />}></Route>
         <Route path="*" element={<NotFoundPage />} />

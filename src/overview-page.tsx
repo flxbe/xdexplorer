@@ -6,7 +6,7 @@ import {
   Stammdatenschema,
 } from "xdatenfelder-xml/dist/v2";
 import { DataFieldType } from "./data-field-type";
-import { Database, SearchResult, ElementRefs } from "./database";
+import { Database, SearchResult, ElementRefs, DashboardData } from "./database";
 import { Link, useSearchParams } from "react-router-dom";
 
 type OverviewPageProps = {
@@ -37,6 +37,16 @@ export function OverviewPage({ database }: OverviewPageProps) {
 
   const searchResult = React.useMemo(() => database.search(term), [term]);
 
+  const content = searchResult ? (
+    <SearchResultList
+      tab={tab}
+      onNavigate={setTab}
+      searchResult={searchResult}
+    />
+  ) : (
+    <Dashboard data={database.getDashboardData()} />
+  );
+
   return (
     <div className="container">
       <div className="row justify-content-center">
@@ -52,11 +62,7 @@ export function OverviewPage({ database }: OverviewPageProps) {
             />
           </div>
 
-          <SearchResultList
-            tab={tab}
-            onNavigate={setTab}
-            searchResult={searchResult}
-          />
+          {content}
         </div>
       </div>
     </div>
@@ -66,7 +72,7 @@ export function OverviewPage({ database }: OverviewPageProps) {
 type SearchResultListProps = {
   tab: string;
   onNavigate: (tab: Tab) => void;
-  searchResult: SearchResult | undefined;
+  searchResult: SearchResult;
 };
 
 function SearchResultList({
@@ -74,17 +80,6 @@ function SearchResultList({
   tab,
   onNavigate,
 }: SearchResultListProps) {
-  if (!searchResult) {
-    return <div>Keine Ergebnisse...</div>;
-  }
-
-  function navigate(target: Tab): React.MouseEventHandler<HTMLAnchorElement> {
-    return (event: React.MouseEvent<HTMLAnchorElement>) => {
-      onNavigate(target);
-      event.preventDefault();
-    };
-  }
-
   let content = undefined;
   switch (tab) {
     case "field":
@@ -191,6 +186,28 @@ function TabLink({
     >
       {children} <span className="badge text-bg-secondary">{totalResults}</span>
     </a>
+  );
+}
+
+function Dashboard({ data }: { data: DashboardData }) {
+  return (
+    <div className="row">
+      <div className="col-12 col-md-6">
+        <div className="card">
+          <div className="card-header">Top Ersteller</div>
+          <ul className="list-group list-group-flush">
+            {data.topAuthors.map(([author, count]) => (
+              <li key={author} className="list-group-item">
+                {author}{" "}
+                <span className="badge rounded-pill text-bg-secondary">
+                  {count}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
   );
 }
 

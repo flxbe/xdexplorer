@@ -32,13 +32,20 @@ interface Searchable {
   name: string;
 }
 
+export interface DashboardData {
+  topAuthors: [string, number][];
+}
+
 export class Database {
   private data: Data;
   private authorRefs: Record<string, ElementRefs>;
 
+  private dashboardData: DashboardData;
+
   constructor(data: Data) {
     this.data = data;
     this.authorRefs = collectAuthorRefs(data);
+    this.dashboardData = computeDashboardData(data, this.authorRefs);
   }
 
   public static async fromFile(file: File): Promise<Database> {
@@ -74,6 +81,10 @@ export class Database {
 
   public getRule(identifier: string): Regel | undefined {
     return this.data.rules[identifier];
+  }
+
+  public getDashboardData(): DashboardData {
+    return this.dashboardData;
   }
 }
 
@@ -169,4 +180,29 @@ function getRefForAuthor(
   }
 
   return elementRefs;
+}
+
+function computeDashboardData(
+  data: Data,
+  authorRefs: Record<string, ElementRefs>
+): DashboardData {
+  const topAuthors = Object.entries(authorRefs)
+    .map(countAuthorRefs)
+    .sort(([_author1, count1], [_author2, count2]) => count2 - count1)
+    .slice(0, 5);
+
+  return { topAuthors };
+}
+
+function countAuthorRefs([author, refs]: [string, ElementRefs]): [
+  string,
+  number
+] {
+  const totalRefs =
+    refs.fieldRefs.length +
+    refs.groupRefs.length +
+    refs.ruleRefs.length +
+    refs.schemaRefs.length;
+
+  return [author, totalRefs];
 }
